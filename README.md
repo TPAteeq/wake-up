@@ -1,4 +1,4 @@
-# 👏 Clap Launcher
+# 👏 Wake Up
 
 Control your computer with voice and claps! Say a wake word, then use clap patterns to launch apps.
 
@@ -25,8 +25,8 @@ Sign up at [console.picovoice.ai](https://console.picovoice.ai/) and copy your A
 
 **macOS:**
 ```bash
-git clone https://github.com/tpateeq/clap-launcher.git
-cd clap-launcher
+git clone https://github.com/tpateeq/wake-up.git
+cd wake-up
 python3 -m venv venv
 source venv/bin/activate
 brew install portaudio
@@ -35,14 +35,18 @@ pip install -r requirements.txt
 
 **Windows:**
 ```bash
-git clone https://github.com/tpateeq/clap-launcher.git
-cd clap-launcher
+git clone https://github.com/tpateeq/wake-up.git
+cd wake-up
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-*Note: Windows users see [WINDOWS_SETUP.md](WINDOWS_SETUP.md) for app launching modifications.*
+**If PyAudio fails on Windows:**
+Download the wheel from [here](https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyaudio) and install:
+```bash
+pip install PyAudio‑0.2.11‑cp39‑cp39‑win_amd64.whl
+```
 
 ### 3. Add Your API Key
 
@@ -52,10 +56,58 @@ Open `clap_launcher.py` and add your key at line 24:
 PORCUPINE_ACCESS_KEY = "your-key-here"
 ```
 
-### 4. Run
+### 4. Configure Apps
 
+**macOS** - Works by default with:
+```python
+subprocess.Popen(["open", "-a", "Visual Studio Code"])
+subprocess.Popen(["open", "-a", "Google Chrome"])
+```
+
+**Windows** - Replace app launching code (line 200) with:
+```python
+def launch_all_apps(self):
+    print("\n🚀 DOUBLE CLAP DETECTED! Launching apps...\n")
+    
+    # VS Code
+    subprocess.Popen(["code"], shell=True)
+    print("✅ Launched VS Code")
+    time.sleep(0.5)
+    
+    # Chrome
+    subprocess.Popen(["start", "chrome", "https://claude.ai"], shell=True)
+    print("✅ Launched Chrome")
+    time.sleep(0.5)
+    
+    # Discord
+    subprocess.Popen(["start", "discord"], shell=True)
+    print("✅ Launched Discord")
+    
+    print("\n✨ All apps launched!\n")
+```
+
+**Common Windows apps:**
+```python
+# Spotify
+subprocess.Popen(["start", "spotify"], shell=True)
+
+# Slack
+subprocess.Popen(["start", "slack"], shell=True)
+
+# Any executable with full path
+subprocess.Popen([r"C:\Program Files\App\app.exe"], shell=True)
+```
+
+### 5. Run
+
+**macOS:**
 ```bash
 python3 clap_launcher.py
+```
+
+**Windows:**
+```bash
+python clap_launcher.py
 ```
 
 Say **"jarvis"** and start clapping!
@@ -81,7 +133,8 @@ Use different wake word: `python3 clap_launcher.py --wake computer`
 
 ### Wake word not detected
 - Speak clearly at normal volume
-- Check microphone permissions (System Preferences → Security & Privacy → Microphone)
+- **macOS**: System Preferences → Security & Privacy → Microphone → Enable Terminal
+- **Windows**: Settings → Privacy → Microphone → Enable Python
 - Try different wake word: `--wake computer`
 
 ### Claps not detected
@@ -99,8 +152,15 @@ pip install pvporcupine
 brew install portaudio
 ```
 
-### Apps not launching (Windows)
-See [WINDOWS_SETUP.md](WINDOWS_SETUP.md) for proper Windows app launching syntax.
+### Windows: Apps not launching
+- Make sure apps are installed and accessible
+- Use full paths if app not in PATH: `subprocess.Popen([r"C:\path\to\app.exe"], shell=True)`
+- Check app name with: `where appname` in Command Prompt
+
+### Windows: PyAudio installation fails
+1. Download wheel from [Unofficial Windows Binaries](https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyaudio)
+2. Choose correct Python version (check with `python --version`)
+3. Install: `pip install PyAudio‑0.2.11‑cp39‑cp39‑win_amd64.whl`
 
 ---
 
