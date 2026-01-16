@@ -1,7 +1,12 @@
+#!/usr/bin/env python3
 """
-Clap-Activated App Launcher for macOS with LOCAL Wake Word Detection
-Say a wake word to activate, then double/triple clap!
-Uses Porcupine for fast, offline wake word detection
+Wake Up - Clap-Activated App Launcher
+Control your computer with voice and claps!
+
+Say a wake word to activate, then use clap patterns to launch apps.
+Uses Porcupine for fast, offline wake word detection.
+
+GitHub: https://github.com/tpateeq/wake-up
 """
 
 import pyaudio
@@ -22,32 +27,37 @@ except ImportError:
     print("  pip install pvporcupine")
     sys.exit(1)
 
-# Your Porcupine API key
-PORCUPINE_ACCESS_KEY = "KEY_HERE"
+# Your Porcupine API key - Get free key from https://console.picovoice.ai/
+PORCUPINE_ACCESS_KEY = "YOUR_KEY_HERE"
 
 
 class UnifiedLauncher:
+    """Unified wake word and clap detection with single audio stream"""
     
     def __init__(self, wake_word="jarvis", clap_threshold=1800, debug=False):
         self.wake_word = wake_word.lower()
         self.clap_threshold = clap_threshold
         self.debug = debug
         
+        # State management
         self.is_active = False
         self.activation_time = 0
         self.active_duration = 5
         self.running = True
         
+        # Two-stage activation: wake word -> double clap -> triple clap
         self.waiting_for_triple = False
         self.triple_wait_time = 0
         self.triple_wait_duration = 30
         
+        # Clap detection state
         self.clap_times = []
         self.last_clap_time = 0
         self.clap_interval = 0.7
         self.previous_amplitude = 0
         self.amplitude_history = deque(maxlen=10)
         
+        # Initialize Porcupine wake word detection
         builtin_keywords = pvporcupine.KEYWORDS
         print(f"📋 Available wake words: {', '.join(builtin_keywords)}")
         
@@ -60,22 +70,28 @@ class UnifiedLauncher:
                 access_key=PORCUPINE_ACCESS_KEY,
                 keywords=[self.wake_word]
             )
-            print(f"Wake word '{self.wake_word}' loaded successfully!")
-            print("This runs 100% locally - no internet needed!\n")
+            print(f"✅ Wake word '{self.wake_word}' loaded successfully!")
+            print("💡 This runs 100% locally - no internet needed!\n")
         except Exception as e:
             print(f"❌ Error initializing Porcupine: {e}")
+            print("\n💡 Make sure you've added your API key at line 28")
+            print("💡 Get a free key at: https://console.picovoice.ai/")
             sys.exit(1)
         
+        # Audio setup - use Porcupine's requirements
         self.sample_rate = self.porcupine.sample_rate
         self.frame_length = self.porcupine.frame_length
         
+        # PyAudio
         self.pa = pyaudio.PyAudio()
         self.audio_stream = None
         
+        # Setup signal handler for clean exit
         signal.signal(signal.SIGINT, self.signal_handler)
     
     def signal_handler(self, sig, frame):
-        print("\n\n👋 Shutting down clap launcher...")
+        """Handle Ctrl+C gracefully"""
+        print("\n\n👋 Shutting down...")
         self.running = False
     
     def start_audio_stream(self):
@@ -115,9 +131,9 @@ class UnifiedLauncher:
             current_time = time.time()
             
             if self.debug and amplitude > 500:
-                print(f"📊 Amplitude: {amplitude} (threshold: {self.clap_threshold})")
+                print(f"Amplitude: {amplitude} (threshold: {self.clap_threshold})")
             
-            # Check for sharp sound (clap )
+            # Check for sharp sound (clap characteristics)
             amplitude_jump = amplitude - self.previous_amplitude
             sharp_attack = amplitude_jump > (self.clap_threshold * 0.4)
             loud_enough = amplitude > self.clap_threshold
@@ -222,9 +238,21 @@ class UnifiedLauncher:
         return True
     
     def launch_all_apps(self):
-        """Launch all configured apps"""
-        print("\n DOUBLE CLAP DETECTED! Launching apps...\n")
+        """
+        Launch all configured apps
         
+        Customize this method to launch your preferred apps!
+        
+        macOS examples (default):
+            subprocess.Popen(["open", "-a", "AppName"])
+        
+        Windows examples:
+            subprocess.Popen(["start", "appname"], shell=True)
+            subprocess.Popen([r"C:\path\to\app.exe"], shell=True)
+        """
+        print("\n🚀 DOUBLE CLAP DETECTED! Launching apps...\n")
+        
+        # macOS - Customize these to your apps!
         tbt_path = os.path.expanduser("~/code/tbt")
         subprocess.Popen(["open", "-a", "Visual Studio Code", tbt_path])
         print(f"✅ Launched VS Code with folder: {tbt_path}")
@@ -238,15 +266,31 @@ class UnifiedLauncher:
         print("✅ Launched Discord")
         time.sleep(0.5)
         
+        # Windows users: Replace above with:
+        # subprocess.Popen(["code"], shell=True)
+        # subprocess.Popen(["start", "chrome", "https://claude.ai"], shell=True)
+        # subprocess.Popen(["start", "discord"], shell=True)
+        
         print("\n✨ All apps launched!\n")
     
     def play_youtube_video(self):
-        """Play a YouTube video"""
+        """
+        Play a YouTube video (or any URL)
+        
+        Customize the URL to your preference!
+        """
         print("\n🎵 TRIPLE CLAP DETECTED! Playing YouTube video...\n")
         
         youtube_url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1"
+        
+        # macOS
         subprocess.Popen(["open", youtube_url])
+        
+        # Windows: Same command works!
+        # subprocess.Popen(["start", youtube_url], shell=True)
+        
         print(f"✅ Opening YouTube: {youtube_url}")
+        print("\n✨ Enjoy the music!\n")
     
     def run(self):
         """Main run loop"""
@@ -289,7 +333,7 @@ class UnifiedLauncher:
                     # Double claps are ignored during this time
                         
         except KeyboardInterrupt:
-            print("\n\n Shutting down...")
+            print("\n\n👋 Shutting down...")
         except Exception as e:
             print(f"\n❌ Error: {e}")
             import traceback
@@ -312,11 +356,11 @@ class UnifiedLauncher:
 
 def main():
     print("=" * 70)
-    print("  👏 CLAP LAUNCHER - Local Wake Word Edition")
+    print("  👏 WAKE UP - Clap Launcher")
     print("=" * 70)
     print("\n🚀 100% LOCAL - No internet needed!")
     print("🗣️  Say wake word → 👏👏 Double clap → Launch apps")
-    print("⏳  Then 30 sec window → 👏👏👏 Triple clap → Play vid")
+    print("⏳  Then 30 sec window → 👏👏👏 Triple clap → Play video")
     print("\nPress Ctrl+C to exit\n")
     
     debug_mode = "--debug" in sys.argv
