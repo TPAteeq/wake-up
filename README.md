@@ -25,7 +25,7 @@ Sign up at [console.picovoice.ai](https://console.picovoice.ai/) and copy your A
 
 **macOS:**
 ```bash
-git clone https://github.com/yourusername/clap-launcher.git
+git clone https://github.com/tpateeq/clap-launcher.git
 cd clap-launcher
 python3 -m venv venv
 source venv/bin/activate
@@ -35,7 +35,7 @@ pip install -r requirements.txt
 
 **Windows:**
 ```bash
-git clone https://github.com/yourusername/clap-launcher.git
+git clone https://github.com/tpateeq/clap-launcher.git
 cd clap-launcher
 python -m venv venv
 venv\Scripts\activate
