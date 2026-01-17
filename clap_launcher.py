@@ -15,6 +15,7 @@ import subprocess
 import time
 import sys
 import os
+import platform
 from collections import deque
 import struct
 import signal
@@ -38,6 +39,10 @@ class UnifiedLauncher:
         self.wake_word = wake_word.lower()
         self.clap_threshold = clap_threshold
         self.debug = debug
+        
+        # Detect operating system
+        self.os_type = platform.system()  # Returns 'Darwin' (macOS), 'Windows', or 'Linux'
+        print(f"🖥️  Detected OS: {self.os_type}")
         
         # State management
         self.is_active = False
@@ -74,7 +79,7 @@ class UnifiedLauncher:
             print("💡 This runs 100% locally - no internet needed!\n")
         except Exception as e:
             print(f"❌ Error initializing Porcupine: {e}")
-            print("\n💡 Make sure you've added your API key at line 28")
+            print("\n💡 Make sure you've added your API key at line 32")
             print("💡 Get a free key at: https://console.picovoice.ai/")
             sys.exit(1)
         
@@ -203,7 +208,7 @@ class UnifiedLauncher:
         self.triple_wait_time = time.time()
         print("\n" + "="*60)
         print("⏳ WAITING FOR TRIPLE CLAP...")
-        print("👏👏👏 Triple clap within 30 seconds = Play YouTube")
+        print("👏👏👏 Triple clap within 30 seconds = Open video")
         print("🚫 Double clap disabled during this time")
         print(f"⏱️  You have {self.triple_wait_duration} seconds...")
         print("="*60 + "\n")
@@ -237,60 +242,111 @@ class UnifiedLauncher:
             
         return True
     
+    def _launch_app_macos(self, app_name, path=None, args=None):
+        """Launch an app on macOS"""
+        cmd = ["open", "-a", app_name]
+        if path:
+            cmd.append(path)
+        if args:
+            cmd.extend(["--args"] + args)
+        subprocess.Popen(cmd)
+    
+    def _launch_app_windows(self, app_command, args=None):
+        """Launch an app on Windows"""
+        if args:
+            subprocess.Popen([app_command] + args, shell=True)
+        else:
+            subprocess.Popen(["start", app_command], shell=True)
+    
+    def _launch_app_linux(self, app_command, args=None):
+        """Launch an app on Linux"""
+        if args:
+            subprocess.Popen([app_command] + args)
+        else:
+            subprocess.Popen([app_command])
+    
     def launch_all_apps(self):
         """
-        Launch all configured apps
+        Launch all configured apps - automatically detects OS
         
-        Customize this method to launch your preferred apps!
-        
-        macOS examples (default):
-            subprocess.Popen(["open", "-a", "AppName"])
-        
-        Windows examples:
-            subprocess.Popen(["start", "appname"], shell=True)
-            subprocess.Popen([r"C:\path\to\app.exe"], shell=True)
+        Customize the apps for each platform below!
         """
         print("\n🚀 DOUBLE CLAP DETECTED! Launching apps...\n")
         
-        # macOS - Customize these to your apps!
-        tbt_path = os.path.expanduser("~/code/tbt")
-        subprocess.Popen(["open", "-a", "Visual Studio Code", tbt_path])
-        print(f"✅ Launched VS Code with folder: {tbt_path}")
-        time.sleep(0.5)
-        
-        subprocess.Popen(["open", "-na", "Google Chrome", "--args", "--new-window", "https://claude.ai"])
-        print("✅ Launched Chrome (new window) with https://claude.ai")
-        time.sleep(0.5)
-        
-        subprocess.Popen(["open", "-a", "Discord"])
-        print("✅ Launched Discord")
-        time.sleep(0.5)
-        
-        # Windows users: Replace above with:
-        # subprocess.Popen(["code"], shell=True)
-        # subprocess.Popen(["start", "chrome", "https://claude.ai"], shell=True)
-        # subprocess.Popen(["start", "discord"], shell=True)
+        if self.os_type == "Darwin":  # macOS
+            # VS Code with specific folder
+            tbt_path = os.path.expanduser("~/code/tbt")
+            self._launch_app_macos("Visual Studio Code", path=tbt_path)
+            print(f"✅ Launched VS Code with folder: {tbt_path}")
+            time.sleep(0.5)
+            
+            # Chrome with specific URL
+            self._launch_app_macos("Google Chrome", args=["--new-window", "https://claude.ai"])
+            print("✅ Launched Chrome with https://claude.ai")
+            time.sleep(0.5)
+            
+            # Discord
+            self._launch_app_macos("Discord")
+            print("✅ Launched Discord")
+            time.sleep(0.5)
+            
+        elif self.os_type == "Windows":
+            # VS Code
+            self._launch_app_windows("code")
+            print("✅ Launched VS Code")
+            time.sleep(0.5)
+            
+            # Chrome with URL
+            self._launch_app_windows("chrome", args=["https://claude.ai"])
+            print("✅ Launched Chrome with https://claude.ai")
+            time.sleep(0.5)
+            
+            # Discord
+            self._launch_app_windows("discord")
+            print("✅ Launched Discord")
+            time.sleep(0.5)
+            
+        elif self.os_type == "Linux":
+            # VS Code
+            self._launch_app_linux("code")
+            print("✅ Launched VS Code")
+            time.sleep(0.5)
+            
+            # Chrome/Chromium with URL
+            try:
+                self._launch_app_linux("google-chrome", args=["https://claude.ai"])
+                print("✅ Launched Chrome with https://claude.ai")
+            except:
+                self._launch_app_linux("chromium-browser", args=["https://claude.ai"])
+                print("✅ Launched Chromium with https://claude.ai")
+            time.sleep(0.5)
+            
+            # Discord
+            self._launch_app_linux("discord")
+            print("✅ Launched Discord")
+            time.sleep(0.5)
         
         print("\n✨ All apps launched!\n")
     
     def play_youtube_video(self):
         """
-        Play a YouTube video (or any URL)
+        Play a video/URL (or any URL) - works cross-platform
         
         Customize the URL to your preference!
         """
-        print("\n🎵 TRIPLE CLAP DETECTED! Playing YouTube video...\n")
+        print("\n🎵 TRIPLE CLAP DETECTED! Opening video...\n")
         
-        youtube_url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1"
+        youtube_url = "https://www.instagram.com/p/DMZ58Whvfir/"
         
-        # macOS
-        subprocess.Popen(["open", youtube_url])
+        if self.os_type == "Darwin":  # macOS
+            subprocess.Popen(["open", youtube_url])
+        elif self.os_type == "Windows":
+            subprocess.Popen(["start", youtube_url], shell=True)
+        elif self.os_type == "Linux":
+            subprocess.Popen(["xdg-open", youtube_url])
         
-        # Windows: Same command works!
-        # subprocess.Popen(["start", youtube_url], shell=True)
-        
-        print(f"✅ Opening YouTube: {youtube_url}")
-        print("\n✨ Enjoy the music!\n")
+        print(f"✅ Opening video: {youtube_url}")
+        print("\n✨ Enjoy!\n")
     
     def run(self):
         """Main run loop"""
@@ -360,7 +416,7 @@ def main():
     print("=" * 70)
     print("\n🚀 100% LOCAL - No internet needed!")
     print("🗣️  Say wake word → 👏👏 Double clap → Launch apps")
-    print("⏳  Then 30 sec window → 👏👏👏 Triple clap → Play video")
+    print("⏳  Then 30 sec window → 👏👏👏 Triple clap → Open video")
     print("\nPress Ctrl+C to exit\n")
     
     debug_mode = "--debug" in sys.argv
