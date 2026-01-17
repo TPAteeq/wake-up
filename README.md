@@ -20,7 +20,7 @@
 
 ## 📋 Requirements
 
-- Python 3.7 or higher
+- **Python 3.9-3.12** (avoid 3.13 on Windows - dependency issues)
 - Microphone
 - macOS, Windows, or Linux
 - Free Porcupine API key from [console.picovoice.ai](https://console.picovoice.ai/)
@@ -35,11 +35,13 @@ Sign up at [console.picovoice.ai](https://console.picovoice.ai/) and copy your A
 
 **macOS:**
 ```bash
+# Install portaudio first (required for PyAudio)
+brew install portaudio
+
 git clone https://github.com/tpateeq/wake-up.git
 cd wake-up
 python3 -m venv venv
 source venv/bin/activate
-brew install portaudio
 pip install -r requirements.txt
 ```
 
@@ -54,20 +56,16 @@ pip install -r requirements.txt
 
 **Linux:**
 ```bash
+# Install portaudio first (required for PyAudio)
+sudo apt-get install portaudio19-dev  # Ubuntu/Debian
+# OR
+sudo dnf install portaudio-devel      # Fedora
+
 git clone https://github.com/tpateeq/wake-up.git
 cd wake-up
 python3 -m venv venv
 source venv/bin/activate
-sudo apt-get install portaudio19-dev  # Ubuntu/Debian
-# OR
-sudo dnf install portaudio-devel      # Fedora
 pip install -r requirements.txt
-```
-
-**If PyAudio fails on Windows:**
-Download the wheel from [here](https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyaudio) and install:
-```bash
-pip install PyAudio‑0.2.11‑cp39‑cp39‑win_amd64.whl
 ```
 
 ### 3. Add Your API Key
@@ -82,25 +80,22 @@ PORCUPINE_ACCESS_KEY = "your-key-here"
 
 The script **automatically detects your OS** and uses the appropriate commands! Just customize the app names in the `launch_all_apps()` method (starting at line 267):
 
-**Default configuration works for all platforms:**
+**Example configuration:**
 ```python
 def launch_all_apps(self):
     print("\n🚀 DOUBLE CLAP DETECTED! Launching apps...\n")
     
     if self.os_type == "Darwin":  # macOS
-        # Your macOS apps here
         self._launch_app_macos("Visual Studio Code")
         self._launch_app_macos("Google Chrome", args=["--new-window", "https://claude.ai"])
         self._launch_app_macos("Discord")
         
     elif self.os_type == "Windows":
-        # Your Windows apps here
         self._launch_app_windows("code")  # VS Code
         self._launch_app_windows("chrome", args=["https://claude.ai"])
         self._launch_app_windows("discord")
         
     elif self.os_type == "Linux":
-        # Your Linux apps here
         self._launch_app_linux("code")  # VS Code
         self._launch_app_linux("google-chrome", args=["https://claude.ai"])
         self._launch_app_linux("discord")
@@ -135,20 +130,16 @@ self._launch_app_linux("gnome-terminal")
 
 ### 5. Run
 
-**All platforms:**
 ```bash
-# macOS/Linux
-python3 clap_launcher.py
-
-# Windows
-python clap_launcher.py
+python3 clap_launcher.py  # macOS/Linux
+python clap_launcher.py   # Windows
 ```
 
 Say **"jarvis"** and start clapping! 🎉
 
-The script will automatically detect your OS and display:
+The script will automatically detect your OS:
 ```
-🖥️  Detected OS: Darwin  # or Windows, or Linux
+🖥️  Detected OS: Windows  # or Darwin (macOS), or Linux
 ```
 
 ## 🎮 Available Wake Words
@@ -171,9 +162,9 @@ The script will automatically detect your OS and display:
 python3 clap_launcher.py --wake computer
 ```
 
-## 🛠️ Advanced Customization
+## 🛠️ Customization
 
-### Customize the video/URL (triple clap action)
+### Change the video URL (triple clap action)
 
 Edit the `play_youtube_video()` method around line 333:
 
@@ -199,7 +190,7 @@ launcher = UnifiedLauncher(
 )
 ```
 
-Run with `--debug` to see amplitude levels and find the right threshold:
+**Run with debug mode** to see amplitude levels and find the right threshold:
 ```bash
 python3 clap_launcher.py --debug
 ```
@@ -207,73 +198,121 @@ python3 clap_launcher.py --debug
 ## 🐛 Troubleshooting
 
 ### Wake word not detected
-- Speak clearly at normal volume
+
+**Check microphone permissions:**
 - **macOS**: System Preferences → Security & Privacy → Microphone → Enable Terminal
 - **Windows**: Settings → Privacy → Microphone → Enable Python
 - **Linux**: Check microphone permissions for your terminal
-- Try different wake word: `--wake computer`
+
+**Test your microphone:**
+- Speak clearly at normal volume
+- Make sure you're using the correct microphone (if you have multiple)
+- Try a different wake word: `python3 clap_launcher.py --wake computer`
+
+**Check which microphone is being used:**
+Run this Python snippet to list available audio devices:
+```python
+import pyaudio
+pa = pyaudio.PyAudio()
+for i in range(pa.get_device_count()):
+    info = pa.get_device_info_by_index(i)
+    if info['maxInputChannels'] > 0:
+        print(f"{i}: {info['name']}")
+```
 
 ### Claps not detected
-- Run debug mode: `python3 clap_launcher.py --debug`
-- Clap sharply and crisply
-- Adjust `clap_threshold` in code (line 416) - lower = more sensitive
-- Watch the amplitude output in debug mode to calibrate
+
+- **Run debug mode**: `python3 clap_launcher.py --debug`
+- Clap sharply and crisply near the microphone
+- Watch the amplitude output - it should spike above the threshold
+- Adjust `clap_threshold` in code (line 416)
+  - Lower value = more sensitive (might pick up background noise)
+  - Higher value = less sensitive (might miss soft claps)
+- Default threshold is 1800 - adjust based on your debug output
+
+**Example debug output:**
+```
+Amplitude: 2500 (threshold: 1800)  # ✅ Clap detected!
+Amplitude: 1200 (threshold: 1800)  # ❌ Too quiet
+```
 
 ### "No module named 'pvporcupine'"
+
 ```bash
 pip install pvporcupine
 ```
 
-### "PortAudio not found"
+### macOS: "PortAudio not found" or "portaudio.h not found"
 
-**macOS:**
+This means portaudio wasn't installed before PyAudio:
+
 ```bash
+# Install portaudio
 brew install portaudio
+
+# Then reinstall requirements
+pip install -r requirements.txt
 ```
 
-**Linux:**
+### Windows: Python 3.13 installation fails
+
+**Recommended solution:** Use Python 3.11 or 3.12 instead.
+
+Some dependencies (numpy, PyAudio) don't have pre-built wheels for Python 3.13 on Windows yet.
+
+1. Download Python 3.12 from [python.org](https://www.python.org/downloads/)
+2. Reinstall and create new venv:
+   ```bash
+   py -3.12 -m venv venv
+   venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
+### Windows: Apps not launching
+
+**Check if apps are installed and in PATH:**
 ```bash
-# Ubuntu/Debian
-sudo apt-get install portaudio19-dev
-
-# Fedora
-sudo dnf install portaudio-devel
-```
-
-**Windows:** Usually not needed, but if required:
-- Download from [PortAudio website](http://www.portaudio.com/)
-
-### Apps not launching
-
-**Check app installation:**
-```bash
-# macOS
-open -a "AppName"  # Test if app opens
-
-# Windows
 where appname  # Check if app is in PATH
-
-# Linux
-which appname  # Check if app is installed
 ```
 
-**For Windows apps not in PATH:**
+**For apps not in PATH:**
 Use full path in the script:
 ```python
 subprocess.Popen([r"C:\Program Files\YourApp\app.exe"])
 ```
 
-### PyAudio installation fails (Windows)
+**Common app commands:**
+- VS Code: `code`
+- Chrome: `chrome`
+- Discord: `discord`
+- Spotify: `spotify`
+- Slack: `slack`
 
-1. Download the appropriate wheel from [Unofficial Windows Binaries](https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyaudio)
-2. Check your Python version: `python --version`
-3. Download matching wheel (e.g., cp39 = Python 3.9, cp310 = Python 3.10)
-4. Install: `pip install PyAudio‑0.2.11‑cp39‑cp39‑win_amd64.whl`
+### API Key errors
+
+**"Invalid access key" or initialization failed:**
+- Make sure you copied the key correctly (no extra spaces)
+- Verify the key at [console.picovoice.ai](https://console.picovoice.ai/)
+- Check if you're using a v3 key with v4 library (or vice versa)
+- Free tier keys have device limits - you may need a new key if using on multiple devices
+
+### Linux: PyAudio installation fails
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install portaudio19-dev python3-dev
+
+# Fedora
+sudo dnf install portaudio-devel python3-devel
+
+# Then reinstall
+pip install -r requirements.txt
+```
 
 ## 📝 How It Works Internally
 
 1. **OS Detection**: Script detects your platform using `platform.system()`
-2. **Wake Word**: Porcupine continuously listens for your wake word
+2. **Wake Word**: Porcupine continuously listens for your wake word (offline)
 3. **Activation Window**: 5 seconds to perform double clap
 4. **App Launch**: OS-appropriate commands launch your apps
 5. **Triple Clap Window**: 30 seconds to perform triple clap for secondary action

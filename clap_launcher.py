@@ -285,10 +285,10 @@ class UnifiedLauncher:
             print("✅ Launched Chrome with https://claude.ai")
             time.sleep(0.5)
             
-            # Discord
-            self._launch_app_macos("Discord")
-            print("✅ Launched Discord")
-            time.sleep(0.5)
+            # # Discord
+            # self._launch_app_macos("Discord")
+            # print("✅ Launched Discord")
+            # time.sleep(0.5)
             
         elif self.os_type == "Windows":
             # VS Code
@@ -302,9 +302,9 @@ class UnifiedLauncher:
             time.sleep(0.5)
             
             # Discord
-            self._launch_app_windows("discord")
-            print("✅ Launched Discord")
-            time.sleep(0.5)
+            # self._launch_app_windows("discord")
+            # print("✅ Launched Discord")
+            # time.sleep(0.5)
             
         elif self.os_type == "Linux":
             # VS Code
@@ -322,9 +322,9 @@ class UnifiedLauncher:
             time.sleep(0.5)
             
             # Discord
-            self._launch_app_linux("discord")
-            print("✅ Launched Discord")
-            time.sleep(0.5)
+            # self._launch_app_linux("discord")
+            # print("✅ Launched Discord")
+            # time.sleep(0.5)
         
         print("\n✨ All apps launched!\n")
     
